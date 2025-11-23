@@ -50,7 +50,7 @@ import { ref } from 'vue'
 
 const mahasiswa = ref({
   nim: '202210370311272',
-  nama: 'Gemilang Rizmart Samopdra',
+  nama: 'Gemilang Rizmart Samodra',
   fakultas: 'Fakultas Teknik',
   prodi: 'Informatika',
   status: 'Aktif'
