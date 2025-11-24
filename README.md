@@ -1,5 +1,6 @@
 # InfoKHS
-## Deskripsi Blablabla
+## Deskripsi Aplikasi
+InfoKHS adalah aplikasi web akademik terpadu yang memudahkan mahasiswa dalam mengakses dan mengelola berbagai layanan kampus seperti melihat profil, pengisian KRS, jadwal kuliah, informasi keuangan, layanan persuratan, serta bantuan chatbot dalam satu platform yang responsif dan mudah digunakan. Aplikasi ini dirancang untuk mempercepat proses administrasi akademik, menghadirkan informasi real-time, serta memberikan pengalaman pengguna yang efisien dan modern bagi seluruh mahasiswa UMM.
 ## Anggota Kelompok :
 - C-202210370311114-Syarif Hermawan-neeyooo
 - C-202210370311272-Ferdi Naufal Prasetyo-FerdiNP
