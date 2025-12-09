@@ -4,16 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class KRS extends Model
+class Tagihan extends Model
 {
-    protected $table = 'krs';
+    protected $table = 'tagihan';
 
     protected $fillable = [
         'mahasiswa_id',
+        'jenis_pembayaran_id',
         'semester_akademik_id',
-        'tgl_pengisian',
+        'nominal',
+        'tgl_jatuh_tempo',
         'status',
-        'catatan_pa',
     ];
 
     public function mahasiswa()
@@ -21,13 +22,18 @@ class KRS extends Model
         return $this->belongsTo(Mahasiswa::class);
     }
 
+    public function jenisPembayaran()
+    {
+        return $this->belongsTo(JenisPembayaran::class);
+    }
+
     public function semesterAkademik()
     {
         return $this->belongsTo(SemesterAkademik::class);
     }
 
-    public function detail()
+    public function pembayaran()
     {
-        return $this->hasMany(KrsDetail::class);
+        return $this->hasMany(Pembayaran::class);
     }
 }
