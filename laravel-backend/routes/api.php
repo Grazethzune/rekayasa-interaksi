@@ -9,7 +9,8 @@ use App\Http\Controllers\Api\{
     MataKuliahController,
     KeuanganController,
     SemesterAkademikController,
-    KHSController
+    KHSController,
+    KRSController
 };
 
 // AUTH
@@ -45,8 +46,16 @@ Route::get('/semester', [SemesterAkademikController::class, 'index']);
 Route::get('/semester/aktif', [SemesterAkademikController::class, 'aktif']);
 Route::get('/semester/{id}', [SemesterAkademikController::class, 'show']);
 
-// KHS (READ ONLY)
+// KHS
 Route::prefix('mahasiswa/{mahasiswa}')->group(function () {
     Route::get('/khs', [KhsController::class, 'index']);
     Route::get('/khs/semester/{semester}', [KhsController::class, 'show']);
+});
+
+// KRS
+Route::prefix('mahasiswa/{mahasiswa}')->group(function () {
+    Route::get('/krs', [KrsController::class, 'index']);
+    Route::post('/krs', [KrsController::class, 'store']);
+    Route::delete('/krs/{detail}', [KrsController::class, 'destroy']);
+    Route::post('/krs/submit', [KrsController::class, 'submit']);
 });
