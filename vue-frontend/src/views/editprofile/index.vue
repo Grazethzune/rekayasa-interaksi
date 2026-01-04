@@ -282,6 +282,13 @@ const saveProfile = async () => {
       }
     );
 
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    storedUser.email_pribadi = form.emailAlt;
+    storedUser.no_hp = form.hp;
+    storedUser.no_ktp = form.ktp;
+    storedUser.alamat = form.alamat;
+    localStorage.setItem("user", JSON.stringify(storedUser));
+    
     router.push({
       path: "/profile",
       query: { success: "profile-updated" },

@@ -24,44 +24,70 @@ const router = useRouter();
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 function hitungSemester(angkatan, semesterAktif) {
-  if (!angkatan || !semesterAktif) return 1;
+  if (!angkatan || !semesterAktif?.nama_semester) return 1;
 
-  const kode = String(semesterAktif.kode_semester || "");
-  const tahunAktif = parseInt(kode.substring(0, 4));
+  const tahunAktif = parseInt(semesterAktif.nama_semester.substring(0, 4));
 
-  const semesterKe = kode.endsWith("2") ? 2 : 1;
+  const isGanjil = semesterAktif.nama_semester
+    .toLowerCase()
+    .includes("ganjil");
 
-  let semester = (tahunAktif - angkatan) * 2 + semesterKe;
+  let semester =
+    (tahunAktif - angkatan) * 2 + (isGanjil ? 1 : 2);
 
   if (semester < 1) semester = 1;
 
   return semester;
 }
 
-onMounted(async () => {
-  try {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) return;
+onMounted(() => {
+  if (route.query.success === "profile-updated") {
+    showSuccessModal.value = true;
 
+    router.replace({ path: "/profile" });
+  }
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
     user.value = JSON.parse(storedUser);
+  }
+  const storedJadwal = localStorage.getItem("jadwal");
+  if (storedJadwal != "undefined") {
+    jadwal.value = JSON.parse(storedJadwal);
+    for (let i = 0; i < jadwal.value.length; i++) {
+      if (
+        jadwal.value[i].kelas_kuliah_baru.id !=
+        jadwal.value[i].kelas_kuliah_lama.id
+      ) {
+        showNotification.value = true;
+        break;
+      }
+    }
+  }
+});
 
-    const res = await api.get("/semester/aktif", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        Accept: "application/json",
-      },
-    });
+onMounted(async ()  => {
+  try {
+      const res = await api.get("/semester/aktif", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Accept: "application/json",
+        },
+      });
 
-    const semesterAktif = res.data?.data;
-    if (!semesterAktif) return;
+      localStorage.setItem("semester_aktif", JSON.stringify(res.data.data));
+    } catch (e) {
+    console.error("Gagal ambil semester aktif:", e.response || e);
+  }
 
-    localStorage.setItem(
-      "semester_aktif",
-      JSON.stringify(semesterAktif)
-    );
+  const storedSemester = localStorage.getItem("semester_aktif");
+
+  if (!storedSemester) return;
+
+  try {
+    const semesterAktif = JSON.parse(storedSemester);
 
     const semesterMahasiswa = hitungSemester(
-      user.value.angkatan,
+      user.angkatan,
       semesterAktif
     );
 
@@ -71,24 +97,8 @@ onMounted(async () => {
     );
 
     console.log("Semester mahasiswa:", semesterMahasiswa);
-
-    const storedJadwal = localStorage.getItem("jadwal");
-    if (storedJadwal && storedJadwal !== "undefined") {
-      jadwal.value = JSON.parse(storedJadwal);
-
-      for (let i = 0; i < jadwal.value.length; i++) {
-        if (
-          jadwal.value[i].kelas_kuliah_baru.id !==
-          jadwal.value[i].kelas_kuliah_lama.id
-        ) {
-          showNotification.value = true;
-          break;
-        }
-      }
-    }
-
   } catch (e) {
-    console.error("Error in onMounted:", e.response || e);
+    console.error("Gagal hitung semester mahasiswa", e);
   }
 });
 

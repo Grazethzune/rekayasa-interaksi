@@ -17,8 +17,9 @@ class KRSController extends Controller
 
         $krs = KRS::with([
                 'semesterAkademik',
-                'detail.kelasKuliah.mataKuliah',
-                'detail.kelasKuliah.dosen',
+                'detail.kelasKuliah' => function ($query) {
+                    $query->with(['mataKuliah', 'dosen'])->withCount('krsDetail');
+                },
             ])
             ->where('mahasiswa_id', $mahasiswaId)
             ->where('semester_akademik_id', $semesterAktif->id)
@@ -35,11 +36,26 @@ class KRSController extends Controller
 
     public function store(Request $request, $mahasiswaId)
     {
+        $semesterAktif = SemesterAkademik::where('status', 'AKTIF')->firstOrFail();
+
+        if (!$semesterAktif->isKrsOpen()) {
+            return response()->json([
+                'message' => 'Masa pengisian KRS belum dibuka atau sudah berakhir.'
+            ], 403);
+        }
+
         $request->validate([
             'kelas_kuliah_id' => 'required|exists:kelas_kuliah,id',
         ]);
 
         $semesterAktif = SemesterAkademik::where('status', 'AKTIF')->firstOrFail();
+
+        $now = now();
+        if (!$semesterAktif->krs_mulai || !$semesterAktif->krs_selesai || !$now->between($semesterAktif->krs_mulai, $semesterAktif->krs_selesai)) {
+          return response()->json([
+              'message' => 'Masa pengisian KRS belum dibuka atau sudah berakhir.'
+          ], 403);
+        }
 
         $krs = KRS::firstOrCreate(
             [
@@ -74,6 +90,14 @@ class KRSController extends Controller
 
     public function destroy($mahasiswaId, $detailId)
     {
+      $semesterAktif = SemesterAkademik::where('status', 'AKTIF')->firstOrFail();
+
+      if (!$semesterAktif->isKrsOpen()) {
+          return response()->json([
+              'message' => 'Masa perubahan KRS sudah ditutup.'
+          ], 403);
+      }
+
         $detail = KRSDetail::whereHas('krs', function ($q) use ($mahasiswaId) {
                 $q->where('mahasiswa_id', $mahasiswaId);
             })
@@ -89,6 +113,12 @@ class KRSController extends Controller
     public function submit($mahasiswaId)
     {
         $semesterAktif = SemesterAkademik::where('status', 'AKTIF')->firstOrFail();
+
+        if (!$semesterAktif->isKrsOpen()) {
+            return response()->json([
+                'message' => 'Masa submit KRS sudah ditutup.'
+            ], 403);
+        }
 
         $krs = KRS::where('mahasiswa_id', $mahasiswaId)
             ->where('semester_akademik_id', $semesterAktif->id)

@@ -31,9 +31,9 @@
           </div>
         </div>
         <div class="content">
-          <span class="alert-title">Jadwal Kelas Belum Tersedia</span>
+          <span class="alert-title">KRS Belum Tersedia</span>
           <p class="alert-desc">
-            Saat ini jadwal dari fakultas belum diunggah. Silakan cek kembali
+            Saat ini jadwal KRS dari fakultas belum diunggah. Silakan cek kembali
             setelah tanggal 20 Oktober 2025 atau hubungi admin program studi
             jika masalah berlanjut.
           </p>
@@ -100,7 +100,6 @@ import JadwalKelasBelumTersedia from "../../components/KRSUnavailable.vue";
 import api from "../../api";
 
 const matkulList = ref([]);
-
 const showJadwalModal = ref(false);
 const selectedMatkul = ref(null);
 const selectedKelas = ref(null);
@@ -109,6 +108,16 @@ const nim = ref("-");
 const nama = ref("-");
 const tahunAkademik = ref("-");
 const semesterAktif = ref("-");
+
+const formatTime = (value) => (value ? value.slice(0, 5) : "");
+
+const formatJadwal = (hari, jamMulai, jamSelesai) => {
+  if (!hari) return "-";
+  const start = formatTime(jamMulai);
+  const end = formatTime(jamSelesai);
+  const range = start && end ? `${start}-${end}` : start || end;
+  return range ? `${hari} (${range})` : hari;
+};
 
 onMounted(() => {
   const storedUser = localStorage.getItem("user");
@@ -122,46 +131,65 @@ onMounted(() => {
   }
 
   if (storedSemester) {
-    const SemesterAkademik = JSON.parse(storedSemester);
-    const SemesterMahasiswa = JSON.parse(storedMahasiswa);
-    tahunAkademik.value = SemesterAkademik.nama_semester || "-";
-    semesterAktif.value = SemesterMahasiswa || "-";
+    const semesterObj = JSON.parse(storedSemester);
+    tahunAkademik.value = semesterObj.nama_semester || "-";
   }
 
-    fetchKRS();
+  if (storedMahasiswa) {
+    semesterAktif.value = JSON.parse(storedMahasiswa) || "-";
+  }
+
+  fetchKRS();
 });
 
 async function fetchKRS() {
   if (!nim.value || nim.value === "-") return;
 
   try {
-    const res = await api.get(`/mahasiswa/${nim.value}/krs`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        Accept: "application/json",
-      },
+    const res = await api.get(`/mahasiswa/${nim.value}/krs`);
+    const payload = res.data.data;
+
+    if (!payload) {
+      matkulList.value = [];
+      return;
+    }
+
+    tahunAkademik.value = payload.semester?.nama || tahunAkademik.value;
+
+    matkulList.value = (payload.mata_kuliah || []).map((item, index) => {
+      const kuota = item.kuota ?? 0;
+      const terisi = item.terisi ?? 0;
+      return {
+        id: item.id ?? item.kelas_kuliah_id,
+        nama: item.nama_mk,
+        semester: semesterAktif ?? payload.semester?.nama ?? "-",
+        sks: item.sks ?? 0,
+        isOpen: index === 0,
+        kelas: [
+          {
+            kelas: item.kode_kelas,
+            jadwal: formatJadwal(item.hari, item.jam_mulai, item.jam_selesai),
+            nilai: item.nilai || "",
+            kuota,
+            terisi,
+            full: item.full ?? (kuota > 0 ? terisi >= kuota : false),
+          },
+        ],
+      };
     });
-
-    const data = res.data.data || [];
-
-    matkulList.value = data.map((item) => ({
-      id: item.mata_kuliah.id,
-      nama: item.mata_kuliah.nama_mk,
-      semester: item.mata_kuliah.semester,
-      sks: item.mata_kuliah.sks,
-      isOpen: false,
-      kelas: item.kelas.map((k) => ({
-        kelas: k.kode_kelas,
-        jadwal: `${k.hari} ${k.jam}`,
-        nilai: k.nilai ?? "",
-        kuota: k.kuota,
-        terisi: k.terisi,
-        full: k.terisi >= k.kuota,
-      })),
-    }));
   } catch (err) {
     console.error("Gagal ambil KRS:", err.response || err);
   }
+}
+
+function toggleMatkul(index) {
+  matkulList.value[index].isOpen = !matkulList.value[index].isOpen;
+}
+
+function pilihKelas(mk, row) {
+  selectedMatkul.value = mk;
+  selectedKelas.value = row;
+  showJadwalModal.value = true;
 }
 </script>
 
@@ -396,5 +424,16 @@ async function fetchKRS() {
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.empty-row {
+  text-align: center;
+  font-style: italic;
+  color: #6b7280;
+}
+
+.btn-pilih[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

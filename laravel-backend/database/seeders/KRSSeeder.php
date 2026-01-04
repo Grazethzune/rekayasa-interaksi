@@ -10,18 +10,14 @@ class KRSSeeder extends Seeder
     public function run()
     {
         $mahasiswa = DB::table('mahasiswa')->get();
+        $currentYear = (int) date('Y');
 
         foreach ($mahasiswa as $mhs) {
-
-            $tahunMasuk = substr($mhs->nim, 0, 4);
-
-            if ($tahunMasuk == '2022') {
-                $semesterIds = [1, 2, 3, 4, 5];
-            } elseif ($tahunMasuk == '2023') {
-                $semesterIds = [3, 4, 5];
-            } else {
-                $semesterIds = [5];
-            }
+            $tahunMasuk = (int) substr($mhs->nim, 0, 4);
+            $progressYears = max(0, $currentYear - $tahunMasuk);
+            $semesterMax = min(5, ($progressYears + 1) * 2);
+            $semesterMax = max(1, $semesterMax);
+            $semesterIds = range(1, $semesterMax);
 
             foreach ($semesterIds as $semesterId) {
                 DB::table('krs')->insert([

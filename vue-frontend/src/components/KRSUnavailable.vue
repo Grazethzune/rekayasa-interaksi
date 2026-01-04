@@ -11,12 +11,8 @@
         </div>
       </div>
 
-      <h2 class="title">Jadwal Kelas Belum Tersedia</h2>
-      <p class="subtitle">
-        Saat ini jadwal dari fakultas belum diunggah. Silakan cek kembali
-        setelah tanggal 20 Oktober 2025 atau hubungi admin program studi
-        jika masalah berlanjut.
-      </p>
+      <h2 class="title">{{ title }}</h2>
+      <p class="subtitle">{{ subtitle }}</p>
 
       <button class="btn-close" @click="close">Tutup</button>
     </div>
@@ -26,9 +22,19 @@
 <script setup>
 const emit = defineEmits(["close"]);
 
-const close = () => {
-  emit("close");
-};
+const props = defineProps({
+  title: {
+    type: String,
+    default: "KRS Belum Tersedia",
+  },
+  subtitle: {
+    type: String,
+    default:
+      "Saat ini jadwal KRS dari fakultas belum diunggah. Silakan cek kembali setelah tanggal 20 Oktober 2025 atau hubungi admin program studi jika masalah berlanjut.",
+  },
+});
+
+const close = () => emit("close");
 </script>
 
 <style scoped>
