@@ -12,7 +12,7 @@ class JenisPembayaranSeeder extends Seeder
         DB::table('jenis_pembayaran')->insert([
             ['id'=>1,'kode_jenis'=>'SPP','nama_jenis'=>'SPP Semester'],
             ['id'=>2,'kode_jenis'=>'DPP','nama_jenis'=>'DPP Awal'],
-            ['id'=>3,'kode_jenis'=>'UAS','nama_jenis'=>'Ujian Akhir Semester'],
+            ['id'=>3,'kode_jenis'=>'SKP','nama_jenis'=>'Skripsi'],
         ]);
     }
 }

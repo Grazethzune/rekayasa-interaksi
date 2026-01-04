@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('kode_prodi', 10)->unique();
             $table->string('nama_prodi', 100);
             $table->enum('jenjang', ['D3', 'D4', 'S1', 'S2', 'S3']);
+            $table->string('fakultas', 30);
             $table->timestamps();
         });
     }

@@ -12,6 +12,7 @@ class ProgramStudi extends Model
         'kode_prodi',
         'nama_prodi',
         'jenjang',
+        'fakultas',
     ];
 
     public function mahasiswa()

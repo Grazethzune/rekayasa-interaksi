@@ -170,33 +170,28 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from "vue";
+import { reactive, ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
+import api from "../../api";
+
+const router = useRouter();
 
 const profile = reactive({
-  nim: "202210370311285",
-  nama: "Ferdhant Arya Exshandy",
-  fakultas: "Fakultas Teknik",
-  prodi: "Informatika",
-  emailUmm: "ferdhant@webmail.umm.ac.id",
+  nim: "",
+  nama: "",
+  fakultas: "",
+  prodi: "",
+  emailUmm: "",
 });
 
 const form = reactive({
-  emailAlt: "ferdhantarya@gmail.com",
-  hp: "08123456789",
-  ktp: "630906090909090",
-  alamat: "Jl. jalan jalan",
+  emailAlt: "",
+  hp: "",
+  ktp: "",
+  alamat: "",
   passBaru: "",
   ulangiPass: "",
 });
-
-const router = (() => {
-  try {
-    return useRouter();
-  } catch (e) {
-    return null;
-  }
-})();
 
 const errors = reactive({
   emailAlt: "",
@@ -207,115 +202,98 @@ const errors = reactive({
   ulangiPass: "",
 });
 
-const successMessage = ref("");
-const saving = ref(false);
-
-const sanitizeNumber = (field) => {
-  if (!form[field]) return;
-  form[field] = String(form[field]).replace(/\D+/g, "");
-};
-
-const validateEmail = (value) => {
-  if (!value) return "Email alternatif wajib diisi.";
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(value) ? "" : "Format email tidak valid.";
-};
-
-const validatePhone = (value) => {
-  if (!value) return "No. HP wajib diisi.";
-  if (!/^[0-9]{8,15}$/.test(value))
-    return "No. HP harus angka 8-15 digit (contoh: 08xxxxxxxx).";
-  return "";
-};
-
-const validateKtp = (value) => {
-  if (!value) return "No. KTP/Passport wajib diisi.";
-  if (!/^[0-9]{6,20}$/.test(value)) return "No. KTP harus angka (6-20 digit).";
-  return "";
-};
-
-const validateAlamat = (value) => {
-  if (!value) return "Alamat wajib diisi.";
-  if (value.length < 5) return "Alamat terlalu singkat.";
-  return "";
-};
-
-const validatePass = (value) => {
-  if (!value) return "";
-  if (!/^[0-9]+$/.test(value)) return "Password/PIC harus berupa angka.";
-  if (value.length < 8) return "Password/PIC minimal 8 digit.";
-  return "";
-};
-
-const validateRepeatPass = (pass, repeat) => {
-  if (!pass && !repeat) return "";
-  if (pass && !repeat) return "Ulangi password wajib diisi.";
-  if (pass !== repeat) return "Password tidak cocok.";
-  return "";
-};
-
 const isFormValid = computed(() => {
-  const vEmail = validateEmail(form.emailAlt) === "";
-  const vHp = validatePhone(form.hp) === "";
-  const vKtp = validateKtp(form.ktp) === "";
-  const vAlamat = validateAlamat(form.alamat) === "";
-  const vPass = validatePass(form.passBaru) === "";
-  const vRepeat = validateRepeatPass(form.passBaru, form.ulangiPass) === "";
-  return vEmail && vHp && vKtp && vAlamat && vPass && vRepeat;
+  if (!form.emailAlt) return false;
+  if (!form.hp) return false;
+  if (!form.ktp) return false;
+  if (!form.alamat) return false;
+
+  if (!form.passBaru && !form.ulangiPass) return true;
+
+  if (form.passBaru && !form.ulangiPass) return true;
+  if (!form.passBaru && form.ulangiPass) return true;
+
+  if (form.passBaru.length < 8) return false;
+  if (form.passBaru !== form.ulangiPass) return false;
+
+  return true;
 });
 
-const runAllValidation = () => {
-  errors.emailAlt = validateEmail(form.emailAlt);
-  errors.hp = validatePhone(form.hp);
-  errors.ktp = validateKtp(form.ktp);
-  errors.alamat = validateAlamat(form.alamat);
-  errors.passBaru = validatePass(form.passBaru);
-  errors.ulangiPass = validateRepeatPass(form.passBaru, form.ulangiPass);
-};
 
-const goBack = () => {
-  if (router && router.back) {
-    router.back();
-    return;
+const saving = ref(false);
+const error = ref("");
+const success = ref("");
+
+onMounted(async () => {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    const userLS = JSON.parse(storedUser);
+
+    profile.nim = userLS.nim;
+    profile.nama = userLS.nama_lengkap;
+    profile.emailUmm = userLS.email_UMM;
+
+    profile.prodi = userLS.program_studi_id?.nama_prodi || "-";
+    profile.fakultas =
+      userLS.program_studi_id?.fakultas || "-";
   }
-  window.history.back();
-};
-
-const saveProfile = async () => {
-  runAllValidation();
-  if (!isFormValid.value) {
-    successMessage.value = "";
-    return;
-  }
-
-  saving.value = true;
-  successMessage.value = "";
 
   try {
-    const payload = {
-      emailAlt: form.emailAlt,
-      hp: form.hp,
-      ktp: form.ktp,
-      alamat: form.alamat,
-      passBaru: form.passBaru ? form.passBaru : undefined,
-    };
-    console.log("Mengirim payload ke server:", payload);
+    const res = await api.get("/me", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
-    await new Promise((r) => setTimeout(r, 700));
+    const me = res.data;
 
-    successMessage.value = "Data profil berhasil disimpan!";
-    form.passBaru = "";
-    form.ulangiPass = "";
-    errors.passBaru = "";
-    errors.ulangiPass = "";
-  } catch (err) {
-    console.error(err);
-    successMessage.value = "Gagal menyimpan data. Coba lagi.";
+    form.emailAlt = me.email_pribadi || "";
+    form.hp = me.no_hp || "";
+    form.ktp = me.no_ktp || "";
+    form.alamat = me.alamat || "";
+  } catch (e) {
+    error.value = "Gagal memuat profil";
+  }
+});
+
+const saveProfile = async () => {
+  error.value = "";
+  saving.value = true;
+
+  if (form.passBaru && form.passBaru !== form.ulangiPass) {
+    error.value = "Password tidak cocok";
+    saving.value = false;
+    return;
+  }
+
+  try {
+    await api.put(
+      "/profile",
+      {
+        email_pribadi: form.emailAlt,
+        no_hp: form.hp,
+        no_ktp: form.ktp,
+        alamat: form.alamat,
+        pin_login: form.passBaru || null,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    router.push({
+      path: "/profile",
+      query: { success: "profile-updated" },
+    });
+  } catch (e) {
+    error.value = "Gagal menyimpan data";
   } finally {
     saving.value = false;
-    setTimeout(() => (successMessage.value = ""), 4000);
   }
 };
+
 </script>
 
 <style>

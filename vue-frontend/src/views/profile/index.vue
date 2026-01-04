@@ -1,11 +1,9 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import NotificationJadwal from "../../components/notificationJadwal.vue";
-
-const user = ref(null);
-const jadwal = ref(null);
-const showNotification = ref(false);
-
+import ModalAlert from "../../components/ModalAlert.vue";
+import api from "../../api";
 import { Bar } from "vue-chartjs";
 import {
   Chart,
@@ -16,9 +14,38 @@ import {
   Legend,
 } from "chart.js";
 
+const user = ref(null);
+const jadwal = ref(null);
+const showNotification = ref(false);
+const showSuccessModal = ref(false);
+const route = useRoute();
+const router = useRouter();
+
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
+function hitungSemester(angkatan, semesterAktif) {
+  if (!angkatan || !semesterAktif?.nama_semester) return 1;
+
+  const tahunAktif = parseInt(semesterAktif.nama_semester.substring(0, 4));
+
+  const isGanjil = semesterAktif.nama_semester
+    .toLowerCase()
+    .includes("ganjil");
+
+  let semester =
+    (tahunAktif - angkatan) * 2 + (isGanjil ? 1 : 2);
+
+  if (semester < 1) semester = 1;
+
+  return semester;
+}
+
 onMounted(() => {
+  if (route.query.success === "profile-updated") {
+    showSuccessModal.value = true;
+
+    router.replace({ path: "/profile" });
+  }
   const storedUser = localStorage.getItem("user");
   if (storedUser) {
     user.value = JSON.parse(storedUser);
@@ -35,6 +62,43 @@ onMounted(() => {
         break;
       }
     }
+  }
+});
+
+onMounted(async ()  => {
+  try {
+      const res = await api.get("/semester/aktif", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Accept: "application/json",
+        },
+      });
+
+      localStorage.setItem("semester_aktif", JSON.stringify(res.data.data));
+    } catch (e) {
+    console.error("Gagal ambil semester aktif:", e.response || e);
+  }
+
+  const storedSemester = localStorage.getItem("semester_aktif");
+
+  if (!storedSemester) return;
+
+  try {
+    const semesterAktif = JSON.parse(storedSemester);
+
+    const semesterMahasiswa = hitungSemester(
+      user.angkatan,
+      semesterAktif
+    );
+
+    localStorage.setItem(
+      "semester_mahasiswa",
+      semesterMahasiswa.toString()
+    );
+
+    console.log("Semester mahasiswa:", semesterMahasiswa);
+  } catch (e) {
+    console.error("Gagal hitung semester mahasiswa", e);
   }
 });
 
@@ -70,6 +134,12 @@ const chartOptions = {
 </script>
 
 <template>
+  <ModalAlert
+    v-if="showSuccessModal"
+    message="Profil berhasil diperbarui"
+    @close="showSuccessModal = false"
+  />
+
   <div class="page-inner">
     <h1 class="title">Profil</h1>
 
@@ -83,7 +153,7 @@ const chartOptions = {
         </li>
         <li class="bio-row">
           <span class="bio-icon">🏛️</span>
-          <span class="bio-text">{{ user?.fakultas || "-" }}</span>
+          <span class="bio-text">{{ user?.program_studi_id.fakultas || "-" }}</span>
         </li>
         <li class="bio-row">
           <span class="bio-icon">📍</span>
@@ -91,7 +161,7 @@ const chartOptions = {
         </li>
         <li class="bio-row">
           <span class="bio-icon">📞</span>
-          <span class="bio-text">{{ user?.no_telp || "-" }}</span>
+          <span class="bio-text">{{ user?.no_hp || "-" }}</span>
         </li>
         <li class="bio-row">
           <span class="bio-icon">✉️</span>

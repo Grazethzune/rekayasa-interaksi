@@ -1,5 +1,5 @@
 import axios from "axios";
-import router from "./route/router";
+import router from "./route/index.js";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",

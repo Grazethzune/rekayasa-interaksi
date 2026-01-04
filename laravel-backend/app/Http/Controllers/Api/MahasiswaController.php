@@ -99,7 +99,7 @@ public function update(Request $request, $NIM)
 {
    $validator = Validator::make($request->all(), [
     'nama_lengkap' => [
-        'required',
+        'nullable',
         'min:3',
         'max:25',
         'regex:/^[A-Za-z\s]+$/'
@@ -131,10 +131,10 @@ public function update(Request $request, $NIM)
         'nullable'
     ],
     'program_studi_id'  => [
-        'required'
+        'nullable'
     ],
     'status_mhs' => [
-        'required',
+        'nullable',
     ],
     'pin_login' => [
         'nullable',
@@ -172,4 +172,44 @@ public function update(Request $request, $NIM)
     return new MahasiswaResource(true, 'Akun Berhasil Diubah!', $user);
 }
 
+public function updateProfile(Request $request)
+{
+    $user = $request->user();
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized'
+        ], 401);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'email_pribadi' => ['nullable', 'email', 'max:100'],
+        'no_hp' => ['nullable', 'regex:/^[0-9]+$/', 'min:8', 'max:15'],
+        'no_ktp' => ['nullable', 'regex:/^[0-9]+$/'],
+        'alamat' => ['nullable'],
+        'pin_login' => ['nullable', 'digits_between:8,20'],
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    $user->email_pribadi = $request->email_pribadi;
+    $user->no_hp = $request->no_hp;
+    $user->no_ktp = $request->no_ktp;
+    $user->alamat = $request->alamat;
+
+    if ($request->filled('pin_login')) {
+        $user->pin_login = Hash::make($request->pin_login);
+    }
+
+    $user->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Profil berhasil diperbarui',
+        'user' => $user->load('programStudi')
+    ]);
+}
 }

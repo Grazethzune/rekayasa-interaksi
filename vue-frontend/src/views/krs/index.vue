@@ -5,19 +5,19 @@
     <div class="info-container">
       <div class="info">
         <p class="info-label">NIM</p>
-        <p class="info-value">202210370311272</p>
+        <p class="info-value">{{ nim }}</p>
       </div>
       <div class="info">
         <p class="info-label">Nama</p>
-        <p class="info-value">Gemilang Rizmart Samodra</p>
+        <p class="info-value">{{ nama }}</p>
       </div>
       <div class="info">
         <p class="info-label">Tahun Akademik</p>
-        <p class="info-value">2025/2026</p>
+        <p class="info-value">{{ tahunAkademik }}</p>
       </div>
       <div class="info">
         <p class="info-label">Semester</p>
-        <p class="info-value">Ganjil</p>
+        <p class="info-value">{{ semesterAktif }}</p>
       </div>
     </div>
 
@@ -95,139 +95,36 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import JadwalKelasBelumTersedia from "../../components/KRSUnavailable.vue";
 
 const showJadwalModal = ref(false);
 const selectedMatkul = ref(null);
 const selectedKelas = ref(null);
 
-const matkulList = ref([
-  {
-    id: 1,
-    nama: "Rekayasa Ulang Sistem",
-    semester: 7,
-    sks: 4,
-    isOpen: true,
-    kelas: [
-      {
-        kelas: "A",
-        jadwal: "Senin (3,4)",
-        nilai: "",
-        kuota: 50,
-        terisi: 50,
-        full: true,
-      },
-      {
-        kelas: "B",
-        jadwal: "Selasa (1,2)",
-        nilai: "",
-        kuota: 50,
-        terisi: 50,
-        full: true,
-      },
-      { kelas: "C", jadwal: "-", nilai: "", kuota: 50, terisi: 0, full: false },
-      { kelas: "D", jadwal: "-", nilai: "", kuota: 50, terisi: 0, full: false },
-    ],
-  },
-  {
-    id: 2,
-    nama: "Rekayasa Interaksi",
-    semester: 7,
-    sks: 3,
-    isOpen: false,
-    kelas: [
-      {
-        kelas: "A",
-        jadwal: "Senin (7,8,9)",
-        nilai: "",
-        kuota: 50,
-        terisi: 50,
-        full: true,
-      },
-      { kelas: "B", jadwal: "-", nilai: "", kuota: 50, terisi: 0, full: false },
-      { kelas: "C", jadwal: "-", nilai: "", kuota: 50, terisi: 0, full: false },
-      { kelas: "D", jadwal: "-", nilai: "", kuota: 50, terisi: 0, full: false },
-    ],
-  },
-  {
-    id: 3,
-    nama: "Penjaminan Kualitas Perangkat Lunak",
-    semester: 7,
-    sks: 3,
-    isOpen: false,
-    kelas: [
-      {
-        kelas: "A",
-        jadwal: "Selasa (5,6)",
-        nilai: "",
-        kuota: 50,
-        terisi: 50,
-        full: true,
-      },
-      {
-        kelas: "B",
-        jadwal: "Kamis (1,2)",
-        nilai: "",
-        kuota: 50,
-        terisi: 50,
-        full: true,
-      },
-      { kelas: "C", jadwal: "-", nilai: "", kuota: 50, terisi: 0, full: false },
-      { kelas: "D", jadwal: "-", nilai: "", kuota: 50, terisi: 0, full: false },
-    ],
-  },
-  {
-    id: 4,
-    nama: "Keamanan Jaringan",
-    semester: 7,
-    sks: 3,
-    isOpen: false,
-    kelas: [
-      {
-        kelas: "A",
-        jadwal: "Rabu (3,4)",
-        nilai: "",
-        kuota: 40,
-        terisi: 40,
-        full: true,
-      },
-      { kelas: "B", jadwal: "", nilai: "", kuota: 40, terisi: 0, full: false },
-      { kelas: "C", jadwal: "-", nilai: "", kuota: 40, terisi: 0, full: false },
-      { kelas: "D", jadwal: "-", nilai: "", kuota: 40, terisi: 0, full: false },
-    ],
-  },
-  {
-    id: 5,
-    nama: "Rekayasa Perangkat Lunak",
-    semester: 5,
-    sks: 2,
-    isOpen: false,
-    kelas: [
-      {
-        kelas: "A",
-        jadwal: "Senin (1,2)",
-        nilai: "",
-        kuota: 35,
-        terisi: 35,
-        full: true,
-      },
-      { kelas: "B", jadwal: "", nilai: "", kuota: 35, terisi: 0, full: false },
-      { kelas: "C", jadwal: "-", nilai: "", kuota: 35, terisi: 0, full: false },
-      { kelas: "D", jadwal: "-", nilai: "", kuota: 35, terisi: 0, full: false },
-    ],
-  },
-]);
+const nim = ref("-");
+const nama = ref("-");
+const tahunAkademik = ref("-");
+const semesterAktif = ref("-");
 
-function toggleMatkul(index) {
-  matkulList.value[index].isOpen = !matkulList.value[index].isOpen;
-}
+onMounted(() => {
+  const storedUser = localStorage.getItem("user");
+  const storedSemester = localStorage.getItem("semester_aktif");
+  const storedMahasiswa = localStorage.getItem("semester_mahasiswa");
 
-function pilihKelas(mk, row) {
-  selectedMatkul.value = mk;
-  selectedKelas.value = row;
-  showJadwalModal.value = true;
-}
+  if (storedUser) {
+    const user = JSON.parse(storedUser);
+    nim.value = user.nim || "-";
+    nama.value = user.nama_lengkap || "-";
+  }
+
+  if (storedSemester) {
+    const SemesterAkademik = JSON.parse(storedSemester);
+    const SemesterMahasiswa = JSON.parse(storedMahasiswa);
+    tahunAkademik.value = SemesterAkademik.nama_semester || "-";
+    semesterAktif.value = SemesterMahasiswa || "-";
+  }
+});
 </script>
 
 <style scoped>
